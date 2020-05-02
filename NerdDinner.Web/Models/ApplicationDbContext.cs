@@ -1,10 +1,9 @@
-using Microsoft.AspNet.Identity.EntityFramework;
-using Microsoft.Data.Entity;
-using Microsoft.Data.Entity.Metadata;
+using System;
+using Microsoft.EntityFrameworkCore;
 
 namespace NerdDinner.Web.Models
 {
-    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
+    public class ApplicationDbContext : DbContext
     {
         private static bool _created = false;
         

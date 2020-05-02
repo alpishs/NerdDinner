@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Principal;
-using System.Threading.Tasks;
-using Microsoft.AspNet.Identity;
-using Microsoft.AspNet.Mvc;
+﻿using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.EntityFrameworkCore;
 using NerdDinner.Web.Models;
 
 namespace NerdDinner.Web.Controllers
@@ -42,9 +41,9 @@ namespace NerdDinner.Web.Controllers
                 var signInStatus = await SignInManager.PasswordSignInAsync(model.UserName, model.Password, model.RememberMe, shouldLockout: false);
                 switch (signInStatus)
                 {
-                    case SignInStatus.Success:
+                    case signInStatus.Success:
                         return RedirectToLocal(returnUrl);
-                    case SignInStatus.Failure:
+                    case signInStatus.Failure:
                     default:
                         ModelState.AddModelError("", "Invalid username or password.");
                         return View(model);
@@ -134,7 +133,7 @@ namespace NerdDinner.Web.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult LogOff()
         {
-            SignInManager.SignOut();
+            SignInManager.SignOutAsync();
             return RedirectToAction("Index", "Home");
         }
 
@@ -150,7 +149,7 @@ namespace NerdDinner.Web.Controllers
 
         private async Task<ApplicationUser> GetCurrentUserAsync()
         {
-            return await UserManager.FindByIdAsync(Context.User.Identity.GetUserId());
+            return await UserManager.FindByIdAsync(DbContext.User.Identity.GetUserId());
         }
 
         public enum ManageMessageId
