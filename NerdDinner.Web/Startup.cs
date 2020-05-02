@@ -1,129 +1,61 @@
 ﻿using System;
-using Microsoft.AspNet.Builder;
-using Microsoft.AspNet.Diagnostics;
-using Microsoft.AspNet.Diagnostics.Entity;
-using Microsoft.AspNet.Hosting;
-using Microsoft.AspNet.Http;
-using Microsoft.AspNet.Identity;
-using Microsoft.AspNet.Routing;
-using Microsoft.AspNet.Security.Cookies;
-using Microsoft.Data.Entity;
-using Microsoft.Framework.ConfigurationModel;
-using Microsoft.Framework.DependencyInjection;
-using Microsoft.Framework.Logging;
-using Microsoft.Framework.Logging.Console;
-using NerdDinner.Web.Models;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Rewrite;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 
 namespace NerdDinner.Web
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env)
+        public Startup(IConfiguration configuration)
         {
-            // Setup configuration sources.
-            Configuration = new Configuration()
-                .AddJsonFile("config.json")
-                .AddEnvironmentVariables();
+            Configuration = configuration;
         }
 
-        public IConfiguration Configuration { get; set; }
+        public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime.
+        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
-            services.AddEntityFramework()
-                    .AddInMemoryStore()
-                    .AddDbContext<ApplicationDbContext>();
-
-            // var runningOnMono = Type.GetType("Mono.Runtime") != null;
-
-            //    // Add EF services to the services container
-            //    if (runningOnMono)
-            //    {
-            //        services.AddEntityFramework()
-            //                .AddSQLite()
-            //                .AddDbContext<ApplicationDbContext>();
-            //    }
-            //    else
-            //    {
-            //     // Add EF services to the services container.
-            //   services.AddEntityFramework(Configuration)
-            //       .AddSqlServer()
-            //       .AddDbContext<ApplicationDbContext>();
-            //    }
-
-            // services.SetupOptions<ApplicationDbContextOptions>(options =>
-            //                         {
-
-            //                             if (runningOnMono)
-            //                             {
-            //                                 options.UseSQLite(configuration.Get("Data:SQLiteConnection:ConnectionString");
-            //                             }
-            //                             else
-            //                             {
-            //                                 options.UseSqlServer(configuration.Get("Data:DefaultConnection:ConnectionString"));
-            //                             }
-            //                         });
-
-
-
-
-            // Add Identity services to the services container.
-            services.AddDefaultIdentity<ApplicationDbContext, ApplicationUser, IdentityRole>(Configuration);
-
-            // Add MVC services to the services container.
-            services.AddMvc();
-
-            // Uncomment the following line to add Web API servcies which makes it easier to port Web API 2 controllers.
-            // You need to add Microsoft.AspNet.Mvc.WebApiCompatShim package to project.json
-            // services.AddWebApiConventions();
-
+            services.AddHealthChecks();
+            services.AddRazorPages().AddRazorPagesOptions(options =>
+            {
+                options.Conventions.AddPageRoute("/robotstxt", "/Robots.Txt");
+            });
+            services.AddMemoryCache();
         }
 
-        // Configure is called after ConfigureServices is called.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerfactory)
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            // Configure the HTTP request pipeline.
-            // Add the console logger.
-            loggerfactory.AddConsole();
-
-            // Add the following to the request pipeline only in development environment.
-            if (string.Equals(env.EnvironmentName, "Development", StringComparison.OrdinalIgnoreCase))
+            if (env.IsDevelopment())
             {
-
-                app.UseErrorPage(ErrorPageOptions.ShowAll);
-                app.UseDatabaseErrorPage(DatabaseErrorPageOptions.ShowAll);
+                app.UseDeveloperExceptionPage();
             }
             else
             {
-                // Add Error handling middleware which catches all application specific errors and
-                // send the request to the following path or controller action.
-                app.UseErrorHandler("/Home/Error");
+                app.UseExceptionHandler("/Error");
+                app.UseHsts();
             }
 
+            var options = new RewriteOptions()
+                .AddIISUrlRewrite(env.ContentRootFileProvider, "IISUrlRewrite.xml");
+            app.UseRewriter(options);
 
-
-
-
-
-            // Add static files to the request pipeline.
+            app.UseHttpsRedirection();
+            app.UseDefaultFiles();
             app.UseStaticFiles();
 
-            // Add cookie-based authentication to the request pipeline.
-            app.UseIdentity();
-
-            // Add MVC to the request pipeline.
-            app.UseMvc(routes =>
+            app.UseRouting();
+            app.UseEndpoints(endpoints =>
             {
-                routes.MapRoute(
-                    name: "default",
-                    template: "{controller}/{action}/{id?}",
-                    defaults: new { controller = "Home", action = "Index" });
+                endpoints.MapHealthChecks("/healthcheck");
 
-                // Uncomment the following line to add a route for porting Web API 2 controllers.
-                // routes.MapWebApiRoute("DefaultApi", "api/{controller}/{id?}");
+                endpoints.MapRazorPages();
             });
         }
     }

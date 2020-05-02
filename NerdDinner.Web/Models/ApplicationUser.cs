@@ -1,6 +1,4 @@
-﻿using System;
-using Microsoft.AspNet.Identity;
-using Microsoft.Framework.OptionsModel;
+﻿using Microsoft.AspNetCore.Identity;
 
 namespace NerdDinner.Web.Models
 {
