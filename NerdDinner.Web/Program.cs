@@ -8,7 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NerdDinner.Web;
 
-namespace Glossary
+namespace NerdDinner.Web
 {
     public class Program
     {
