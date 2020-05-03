@@ -1,8 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
+using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using NerdDinner.Web.Models;
 
@@ -11,13 +12,13 @@ namespace NerdDinner.Web.Controllers
     [Authorize]
     public class AccountController : Controller
     {
-        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
+        public AccountController(Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
         {
             UserManager = userManager;
             SignInManager = signInManager;
         }
 
-        public UserManager<ApplicationUser> UserManager { get; private set; }
+        public Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager { get; private set; }
         public SignInManager<ApplicationUser> SignInManager { get; private set; }
 
         // GET: /Account/Login
@@ -38,12 +39,13 @@ namespace NerdDinner.Web.Controllers
         {
             if (ModelState.IsValid)
             {
-                var signInStatus = await SignInManager.PasswordSignInAsync(model.UserName, model.Password, model.RememberMe, shouldLockout: false);
-                switch (signInStatus)
+                var result = await SignInManager.PasswordSignInAsync(model.UserName, model.Password, model.RememberMe, shouldLockout: false);
+
+                switch (result)
                 {
-                    case signInStatus.Success:
+                    case result.Success:
                         return RedirectToLocal(returnUrl);
-                    case signInStatus.Failure:
+                    case result.Failure:
                     default:
                         ModelState.AddModelError("", "Invalid username or password.");
                         return View(model);
@@ -127,19 +129,24 @@ namespace NerdDinner.Web.Controllers
             return View(model);
         }
 
+        private void AddErrors(Microsoft.AspNetCore.Identity.IdentityResult result)
+        {
+            throw new NotImplementedException();
+        }
+
         //
         // POST: /Account/LogOff
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult LogOff()
         {
-            SignInManager.SignOutAsync();
+            SignInManager.SignOut();
             return RedirectToAction("Index", "Home");
         }
 
         #region Helpers
 
-        private void AddErrors(IdentityResult result)
+        private void AddErrors(Microsoft.AspNet.Identity.IdentityResult result)
         {
             foreach (var error in result.Errors)
             {
